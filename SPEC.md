@@ -1,4 +1,124 @@
-# LibreFood - Product Specification Document
+## Development Milestones
+
+### Phase 1: Foundation (Weeks 1-3)
+**Week 1:**
+- Project setup (Expo init)
+- Database schema implementation (all tables including meals, recipes, preferences)
+- User table and profile creation
+- Onboarding flow UI (basic screens)
+
+**Week 2:**
+- TDEE calculator implementation (all formulas)
+- Goal setting logic
+- Profile settings screen
+- Metric/imperial unit conversion
+- **NEW: Onboarding quiz implementation**
+- **NEW: Tracking preferences setup**
+
+**Week 3:**
+- Local storage integration
+- Data persistence
+- Settings management
+- Basic navigation structure
+- **NEW: UI theme system foundation**
+
+### Phase 2: Food Tracking & Custom Foods (Weeks 4-5)
+**Week 4:**
+- USDA database integration (download and embed)
+- Food search functionality
+- Food details display
+- Serving size calculations
+- Custom food creation
+
+**Week 5:**
+- Food logging implementation
+- Daily log view
+- Macro calculation and display
+- Edit/delete log entries
+- **NEW: Adaptive UI based on tracking preferences**
+
+### Phase 2.5: Custom Meals & Recipes (Weeks 5.5-6.5)
+**Week 5.5:**
+- Custom meals feature
+  - Create/edit meals
+  - Add foods to meals
+  - Quick-log meals
+  - Meal management screen
+
+**Week 6:**
+- Custom recipes (basic)
+  - Create recipe
+  - Add ingredients
+  - Basic instructions (text)
+  - Nutrition calculation engine
+  - Recipe list view
+
+**Week 6.5:**
+- Recipe enhancements
+  - Step-by-step instructions
+  - Timing fields (prep/cook)
+  - Recipe photos
+  - Categories and tags
+  - Recipe scaling
+  - Recipe detail view
+
+### Phase 3: Body Metrics (Week 7)
+- Weight tracking UI and logic
+- Body fat % calculators (Navy, Skinfold)
+- BMI calculation
+- Progress photo capture and storage
+- Metrics graphs (weight, BF%)
+
+### Phase 4: Analytics (Week 8)
+- Dashboard home screen (adaptive based on preferences)
+- Detailed analytics views
+- All chart types (line, bar, circular progress)
+- Date range filtering
+- Summary statistics calculations
+- **NEW: Dashboard customization** (widget ordering)
+
+### Phase 5: Education Hub (Week 9)
+- PubMed API integration
+- Research feed UI
+- Static education content pages
+- Nutrient explainer modals
+- Bookmark functionality
+
+### Phase 6: Advanced Features (Week 10)
+- Barcode scanning (Expo + Open Food Facts)
+- Recipe/meal sharing (export/import)
+- **NEW: UI theme switcher** (minimalist/standard/maximalist)
+- **NEW: Advanced tracking preferences** screen
+
+### Phase 6.5: Computer Vision (Week 10.5)
+- Research and select CV approach (API vs on-device)
+- Implement photo capture for food
+- Food recognition integration
+- Calorie estimation from images
+- User adjustment interface
+- Accuracy validation and edge case testing
+- Privacy-preserving implementation
+
+### Phase 7: Polish & Launch Prep (Week 11)
+- Data export functionality (all types)
+- Onboarding improvements
+- UI polish and animations
+- Performance optimization
+- Bug fixes
+- App store assets (screenshots, descriptions)
+
+### Phase 8: Beta Testing (Weeks 12-13)
+- TestFlight (iOS) and internal testing (Android)
+- User feedback collection
+- Bug fixes
+- Final polish
+
+### Phase 9: Launch (Week 14)
+- App Store submission
+- Google Play submission
+- F-Droid submission
+- Website launch (GitHub Pages)
+- Initial marketing (Reddit, Product Hunt, etc.)# LibreFood - Product Specification Document
 
 ## Project Overview
 
@@ -16,7 +136,8 @@
 2. **Evidence-Based** - Science and research-driven, no fad diets
 3. **Privacy-First** - All data stored locally, user owns everything
 4. **Education-Focused** - Help users understand nutrition, not just track it
-5. **No BS** - No ads, no upsells, no sponsored content
+5. **Customizable** - "Diet your way" - track only what matters to you
+6. **No BS** - No ads, no upsells, no sponsored content
 
 ---
 
@@ -64,6 +185,7 @@ CREATE TABLE users (
   goal_weight_kg REAL,
   goal_rate_kg_per_week REAL, -- 0.25, 0.5, 0.75, 1.0
   custom_calorie_target INTEGER,
+  tracking_purpose TEXT, -- JSON array of purposes from onboarding quiz
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
@@ -159,9 +281,149 @@ CREATE TABLE custom_foods (
   -- Same nutrient columns as foods table
   calories REAL,
   protein_g REAL,
-  -- ... (all same fields)
+  carbs_g REAL,
+  fat_g REAL,
+  fiber_g REAL,
+  sugar_g REAL,
+  -- Vitamins
+  vitamin_a_mcg REAL,
+  vitamin_c_mg REAL,
+  vitamin_d_mcg REAL,
+  vitamin_e_mg REAL,
+  vitamin_k_mcg REAL,
+  thiamin_mg REAL,
+  riboflavin_mg REAL,
+  niacin_mg REAL,
+  vitamin_b6_mg REAL,
+  folate_mcg REAL,
+  vitamin_b12_mcg REAL,
+  -- Minerals
+  calcium_mg REAL,
+  iron_mg REAL,
+  magnesium_mg REAL,
+  phosphorus_mg REAL,
+  potassium_mg REAL,
+  sodium_mg REAL,
+  zinc_mg REAL,
+  copper_mg REAL,
+  manganese_mg REAL,
+  selenium_mcg REAL,
+  -- Additional
+  cholesterol_mg REAL,
+  saturated_fat_g REAL,
+  trans_fat_g REAL,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
+);
+```
+
+#### Custom Meals Table
+```sql
+CREATE TABLE custom_meals (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  notes TEXT,
+  is_favorite BOOLEAN DEFAULT 0,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE custom_meal_items (
+  id INTEGER PRIMARY KEY,
+  meal_id INTEGER NOT NULL,
+  food_id INTEGER, -- references foods.fdc_id
+  custom_food_id INTEGER, -- references custom_foods.id
+  recipe_id INTEGER, -- references custom_recipes.id
+  servings REAL NOT NULL DEFAULT 1.0,
+  notes TEXT, -- e.g., "extra butter", "no dressing"
+  FOREIGN KEY (meal_id) REFERENCES custom_meals(id) ON DELETE CASCADE
+);
+```
+
+#### Custom Recipes Table
+```sql
+CREATE TABLE custom_recipes (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  servings REAL NOT NULL, -- how many servings recipe yields
+  
+  -- Timing
+  prep_time_minutes INTEGER,
+  cook_time_minutes INTEGER,
+  total_time_minutes INTEGER,
+  
+  -- Instructions
+  instructions TEXT, -- full text or JSON for step-by-step
+  
+  -- Categorization
+  category TEXT, -- 'breakfast', 'lunch', 'dinner', 'snack', 'dessert'
+  tags TEXT, -- JSON array: ['quick', 'vegetarian', 'high-protein']
+  difficulty TEXT, -- 'easy', 'medium', 'hard'
+  
+  -- Media
+  photo_path TEXT, -- local path to recipe photo
+  
+  -- Other
+  notes TEXT, -- tips, substitutions
+  source TEXT, -- where recipe came from (if adapted)
+  is_favorite BOOLEAN DEFAULT 0,
+  times_cooked INTEGER DEFAULT 0,
+  
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE custom_recipe_ingredients (
+  id INTEGER PRIMARY KEY,
+  recipe_id INTEGER NOT NULL,
+  food_id INTEGER, -- references foods.fdc_id
+  custom_food_id INTEGER, -- references custom_foods.id
+  
+  amount REAL NOT NULL,
+  unit TEXT NOT NULL, -- 'cup', 'gram', 'tablespoon', etc.
+  
+  notes TEXT, -- e.g., "chopped", "diced", "optional"
+  order_index INTEGER, -- for displaying ingredients in order
+  
+  FOREIGN KEY (recipe_id) REFERENCES custom_recipes(id) ON DELETE CASCADE
+);
+
+CREATE TABLE custom_recipe_steps (
+  id INTEGER PRIMARY KEY,
+  recipe_id INTEGER NOT NULL,
+  step_number INTEGER NOT NULL,
+  instruction TEXT NOT NULL,
+  duration_minutes INTEGER, -- time for this step
+  FOREIGN KEY (recipe_id) REFERENCES custom_recipes(id) ON DELETE CASCADE
+);
+
+-- Recipe nutrition cache (pre-calculated for performance)
+CREATE TABLE recipe_nutrition (
+  recipe_id INTEGER PRIMARY KEY,
+  per_serving BOOLEAN, -- true if per serving, false if total
+  
+  -- Cache all nutrition values
+  calories REAL,
+  protein_g REAL,
+  carbs_g REAL,
+  fat_g REAL,
+  fiber_g REAL,
+  sugar_g REAL,
+  -- All vitamins and minerals (same as foods table)
+  vitamin_a_mcg REAL,
+  vitamin_c_mg REAL,
+  vitamin_d_mcg REAL,
+  -- ... (include all nutrients)
+  
+  calculated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (recipe_id) REFERENCES custom_recipes(id) ON DELETE CASCADE
 );
 ```
 
@@ -197,6 +459,64 @@ CREATE TABLE research_articles (
 );
 ```
 
+#### User Tracking Preferences Table
+```sql
+CREATE TABLE user_tracking_preferences (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  
+  -- Based on onboarding quiz
+  focus_mode TEXT, -- derived from quiz: 'weight_loss', 'performance', 'health', etc.
+  ui_theme TEXT DEFAULT 'standard', -- 'minimalist', 'standard', 'maximalist'
+  
+  -- Macro tracking toggles
+  track_calories BOOLEAN DEFAULT 1,
+  track_protein BOOLEAN DEFAULT 1,
+  track_carbs BOOLEAN DEFAULT 1,
+  track_fat BOOLEAN DEFAULT 1,
+  track_fiber BOOLEAN DEFAULT 0,
+  track_sugar BOOLEAN DEFAULT 0,
+  track_cholesterol BOOLEAN DEFAULT 0,
+  track_sodium BOOLEAN DEFAULT 0,
+  track_saturated_fat BOOLEAN DEFAULT 0,
+  
+  -- Vitamin tracking toggles
+  track_vitamin_a BOOLEAN DEFAULT 0,
+  track_vitamin_c BOOLEAN DEFAULT 0,
+  track_vitamin_d BOOLEAN DEFAULT 0,
+  track_vitamin_e BOOLEAN DEFAULT 0,
+  track_vitamin_k BOOLEAN DEFAULT 0,
+  track_b_vitamins BOOLEAN DEFAULT 0,
+  
+  -- Mineral tracking toggles
+  track_calcium BOOLEAN DEFAULT 0,
+  track_iron BOOLEAN DEFAULT 0,
+  track_magnesium BOOLEAN DEFAULT 0,
+  track_potassium BOOLEAN DEFAULT 0,
+  track_zinc BOOLEAN DEFAULT 0,
+  
+  -- Body metrics tracking
+  track_weight BOOLEAN DEFAULT 1,
+  track_body_fat BOOLEAN DEFAULT 0,
+  track_measurements BOOLEAN DEFAULT 0,
+  
+  -- Feature visibility
+  show_progress_photos BOOLEAN DEFAULT 1,
+  show_research_feed BOOLEAN DEFAULT 1,
+  show_recipes BOOLEAN DEFAULT 1,
+  show_meals BOOLEAN DEFAULT 1,
+  show_meal_planning BOOLEAN DEFAULT 0,
+  
+  -- Dashboard customization
+  dashboard_layout TEXT, -- JSON: which widgets to show and in what order
+  
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+```
+
 ---
 
 ## MVP Feature Specifications
@@ -208,17 +528,21 @@ CREATE TABLE research_articles (
 2. Height input (cm or ft/in with toggle)
 3. Birth date picker
 4. Sex selection
-5. Activity level selection with descriptions
-6. Goal selection screen
-7. TDEE calculation formula preference
-8. Current weight entry
-9. Goal configuration (target weight, rate, or custom calories)
+5. **NEW: "What brings you to LibreFood?" Quiz** (tracking purpose)
+6. Activity level selection with descriptions
+7. Goal selection screen
+8. TDEE calculation formula preference
+9. Current weight entry
+10. Goal configuration (target weight, rate, or custom calories)
+11. **NEW: Tracking preferences review** (what you'll be tracking)
 
 **Profile Settings (accessible later):**
 - Edit all onboarding info
 - Switch between metric/imperial
 - Change TDEE formula
 - Adjust goals
+- **NEW: Customize tracking preferences** (what nutrients to track)
+- **NEW: UI theme selector** (minimalist/standard/maximalist)
 - Privacy settings
 - Export data
 - About/Help
@@ -294,7 +618,7 @@ CREATE TABLE research_articles (
 
 **Food Search:**
 - Search embedded USDA database
-- Filter by: All, Branded, Generic, Custom
+- Filter by: All, Branded, Generic, Custom Foods, Custom Meals, Custom Recipes
 - Recent foods quick access
 - Favorites/frequent foods
 - Barcode scanner (Open Food Facts API)
@@ -307,22 +631,28 @@ CREATE TABLE research_articles (
 - Set time (default: now)
 - Add notes
 - Quick copy from previous days
+- **NEW: Quick-log entire custom meal**
+- **NEW: Log recipe servings**
 
 **Daily Log View:**
 - Today's foods organized by meal
 - Running calorie/macro totals
 - Visual progress bars (calories, protein, carbs, fat)
-- Micronutrient summary (tap to expand)
+- **NEW: Micronutrient summary** (only shows nutrients user is tracking)
 - Edit/delete logged items
 - Add quick note for the day
+- **NEW: Expandable detail view** (based on UI theme)
 
 **Nutrition Summary:**
 - Macros: calories, protein, carbs, fat, fiber, sugar
-- Micronutrients (expandable): all vitamins and minerals from USDA
+- **NEW: Micronutrients** (only displayed if user is tracking them)
 - % of daily value indicators (based on RDI/DV)
 - Color coding: under/meeting/over targets
+- **NEW: Adaptive display** based on tracking preferences
 
-### 5. Custom Foods
+### 5. Custom Foods, Meals, and Recipes
+
+#### Custom Foods
 
 **Add Custom Food:**
 - Name (required)
@@ -339,6 +669,139 @@ CREATE TABLE research_articles (
 - Edit existing
 - Delete (with confirmation)
 - Export custom foods
+
+#### Custom Meals
+
+**What is a Custom Meal:**
+- Saved combination of foods you eat together
+- No cooking involved, just foods consumed together
+- Example: "Morning Coffee Routine" = coffee + cream + toast
+- Quick-log the entire combination at once
+
+**Create Custom Meal:**
+- Name (required, e.g., "My Breakfast")
+- Description (optional)
+- Add foods:
+  - Search and add from any source (USDA, custom foods, recipes)
+  - Set servings for each item
+  - Add notes per item (optional)
+- Mark as favorite (optional)
+- Save
+
+**Manage Custom Meals:**
+- List view of all meals
+- Search meals
+- Edit meal components
+- Duplicate and modify
+- Delete (with confirmation)
+- Filter by favorites
+
+**Log Custom Meal:**
+- Search for meal
+- Quick-log entire meal to current meal time
+- Or adjust servings/items before logging
+- Nutrition auto-calculated from components
+
+#### Custom Recipes
+
+**What is a Custom Recipe:**
+- Full recipe with ingredients, instructions, and yield
+- Cooking involved
+- Nutrition calculated per serving
+- Example: "Protein Pancakes (4 servings)"
+
+**Create Custom Recipe:**
+- **Basic Info:**
+  - Name (required)
+  - Description (optional)
+  - Category (breakfast, lunch, dinner, snack, dessert)
+  - Servings/Yield (required)
+  - Difficulty (easy, medium, hard)
+  - Tags (vegetarian, vegan, quick, high-protein, etc.)
+
+- **Ingredients:**
+  - Add ingredients from any source
+  - Amount + unit for each
+  - Notes per ingredient (e.g., "chopped", "optional")
+  - Order ingredients as they appear in recipe
+
+- **Instructions:**
+  - Option 1: Full text instructions
+  - Option 2: Step-by-step (structured)
+    - Each step numbered
+    - Optional duration per step
+  
+- **Timing:**
+  - Prep time (optional)
+  - Cook time (optional)
+  - Total time (auto-calculated or manual)
+
+- **Media:**
+  - Add photo of finished dish (optional)
+  - Take photo or select from gallery
+
+- **Other:**
+  - Notes (tips, substitutions, variations)
+  - Source (if adapted from somewhere)
+  - Mark as favorite
+
+**Recipe Features:**
+- **Nutrition Auto-Calculation:**
+  - Total recipe nutrition calculated from ingredients
+  - Per-serving nutrition displayed
+  - Updates when ingredients change
+  
+- **Recipe Scaling:**
+  - Adjust serving size
+  - Ingredients auto-scale proportionally
+  - Nutrition updates automatically
+
+- **Cook Counter:**
+  - Track how many times you've made it
+  - Increments when you log it
+
+**Manage Custom Recipes:**
+- List view (card or list layout)
+- Search recipes
+- Filter by:
+  - Category
+  - Tags
+  - Favorites
+  - Recently cooked
+- Sort by:
+  - Name
+  - Date created
+  - Times cooked
+  - Prep time
+- Edit recipe
+- Duplicate recipe (for variations)
+- Delete (with confirmation)
+- Share recipe (export to file)
+
+**Log Custom Recipe:**
+- Search for recipe
+- View recipe details (ingredients, instructions, nutrition)
+- Choose number of servings eaten
+- Add to food log
+- Nutrition auto-calculated for servings consumed
+- Recipe "times cooked" counter increments
+
+**Recipe Detail View:**
+- Photo (if added)
+- Name and description
+- Category, tags, difficulty
+- Servings yield
+- Timing (prep/cook/total)
+- Nutrition facts (per serving and total)
+- Ingredients list
+- Instructions (step-by-step or full text)
+- Notes
+- Action buttons:
+  - Log servings
+  - Edit recipe
+  - Duplicate
+  - Share
+  - Delete
 
 ### 6. Analytics & Visualizations
 
@@ -372,7 +835,195 @@ CREATE TABLE research_articles (
 - Monthly trends
 - Custom date range selector
 
-### 7. Education Hub
+### 7. "Diet Your Way" - Customizable Tracking & UI
+
+#### Onboarding Quiz: "What brings you to LibreFood?"
+
+**Quiz Screen (after basic profile info, before goal setting):**
+
+Display options (user can select multiple):
+- 🎯 **Weight Management** (loss or gain)
+- 💪 **Athletic Performance** (sports, gym)
+- ❤️ **General Health** (feel better, more energy)
+- 🔬 **Specific Health Condition** (diabetes, heart health, etc.)
+- 🧠 **Learn About Nutrition** (education-focused)
+- 📊 **Track Everything** (data enthusiast)
+- ✨ **Keep It Simple** (just the basics)
+
+**Configuration Profiles Based on Selection:**
+
+**Weight Management:**
+- Track: Calories, protein, weight
+- UI Theme: Standard
+- Dashboard: Calorie progress, weight trend, deficit calculator
+- Show: Basic macros, weight projections
+- Hide: Most micronutrients (available in settings)
+
+**Athletic Performance:**
+- Track: Calories, all macros (protein/carbs focus), weight
+- UI Theme: Standard or Maximalist option
+- Dashboard: Macro breakdown, meal timing suggestions
+- Show: Pre/post workout features (future)
+- Optional: Meal timing around workouts
+
+**General Health:**
+- Track: Balanced macros, key micros (Vit D, iron, calcium, fiber)
+- UI Theme: Standard
+- Dashboard: Balanced macro/micro view
+- Show: Research feed, nutrient education
+- Focus: Overall wellness, nutrient diversity
+
+**Specific Health Condition:**
+- Sub-menu appears:
+  - Diabetes Management → Track carbs, sugar, fiber prominently
+  - Heart Health → Track sodium, cholesterol, saturated fat
+  - Other → User customizes
+- UI Theme: Standard with focus on relevant nutrients
+- Dashboard: Condition-specific metrics highlighted
+
+**Learn About Nutrition:**
+- Track: Everything available
+- UI Theme: Maximalist (default, can change)
+- Dashboard: Detailed breakdowns, all nutrients
+- Show: Research feed (prominent), nutrient explainers
+- Focus: Education and understanding
+
+**Track Everything:**
+- Track: All macros, all available micros
+- UI Theme: Maximalist
+- Dashboard: Dense info display, detailed analytics
+- Show: All features, advanced analytics
+- For data enthusiasts
+
+**Keep It Simple:**
+- Track: Calories, protein, weight only
+- UI Theme: Minimalist
+- Dashboard: Simple circular progress, minimal text
+- Hide: Advanced features (available in settings)
+- Clean, uncluttered experience
+
+**Multi-Selection Logic:**
+- If "Weight Management + Performance" → Track calories, all macros, weight
+- If "Health + Learn" → Show research feed, track important nutrients, education prominent
+- If "Simple + Health" → Simple UI but with key health nutrients
+- App intelligently merges features from selected profiles
+
+#### UI Theme System
+
+**Three UI Themes:**
+
+**Minimalist:**
+- Large, clean typography
+- Lots of whitespace
+- Simple circular progress indicators
+- Hide optional info by default
+- Tap to expand details
+- Focus on essential metrics only
+- Calm, uncluttered interface
+
+**Standard (Default):**
+- Balanced information density
+- Cards and sections
+- Most common metrics visible
+- Good for majority of users
+- Progressive disclosure (advanced features available but not prominent)
+
+**Maximalist/Power User:**
+- Dense information display
+- Tables and detailed breakdowns
+- All tracked metrics visible simultaneously
+- Advanced features prominent
+- Minimal whitespace
+- For nutrition enthusiasts and data-driven users
+
+**Theme affects:**
+- Dashboard layout and density
+- Daily log detail level
+- Analytics depth
+- Navigation structure
+- Font sizes and spacing
+
+**Switching themes:**
+- Available in Settings → Display
+- Changes apply immediately
+- Can preview each theme before applying
+
+#### Tracking Preferences Customization
+
+**Accessible in Settings → Tracking Preferences**
+
+**Macro Tracking:**
+- Toggle tracking for each macro:
+  - Calories (always on)
+  - Protein
+  - Carbohydrates
+  - Fat
+  - Fiber
+  - Sugar
+  - Cholesterol
+  - Sodium
+  - Saturated Fat
+
+**Micronutrient Tracking:**
+- **Vitamins:** A, C, D, E, K, B-complex
+- **Minerals:** Calcium, Iron, Magnesium, Potassium, Zinc, etc.
+- Toggle individual nutrients or use preset groups:
+  - "Essential vitamins" (A, C, D)
+  - "B-complex vitamins"
+  - "Essential minerals" (calcium, iron, magnesium)
+  - "Electrolytes" (sodium, potassium)
+
+**Body Metrics:**
+- Weight tracking (on/off)
+- Body fat percentage (on/off)
+- Other measurements (on/off)
+- Progress photos (on/off)
+
+**Feature Visibility:**
+- Research feed (show/hide)
+- Recipes feature (show/hide)
+- Meals feature (show/hide)
+- Meal planning (show/hide, future feature)
+
+**Dashboard Customization:**
+- Choose which widgets appear on home screen
+- Reorder widgets (drag and drop)
+- Widget options:
+  - Today's calorie progress
+  - Macro breakdown
+  - Weight trend
+  - Streak counter
+  - Quick actions
+  - Recent foods
+  - Research highlights
+  - Recipe of the day
+
+**Preset Focus Modes:**
+- Quick presets for common scenarios
+- "Cutting" → Calories, protein, weight
+- "Bulking" → Calories, all macros, weight
+- "Maintenance" → Balanced view
+- "Health Focus" → Key nutrients, wellness
+- "Custom" → Manually configure everything
+
+**Why "Diet Your Way" Matters:**
+- Reduces overwhelm for beginners
+- Focuses users on what they actually care about
+- Respects that not everyone wants to track everything
+- Makes app feel personalized
+- Prevents feature bloat feeling
+- Users can always enable more later
+
+#### Review Screen After Quiz
+
+After onboarding quiz, before finalizing setup:
+
+**"Your LibreFood Setup"**
+- Shows what user will be tracking based on quiz
+- UI theme selected
+- Dashboard preview
+- "You can change any of this anytime in Settings"
+- Confirm or customize further
 
 **"What's New in Nutrition" Feed:**
 - PubMed API integration
@@ -414,7 +1065,7 @@ CREATE TABLE research_articles (
   - Deficiency symptoms
   - Link to research
 
-### 8. Barcode Scanning
+### 8. Education Hub
 
 **Implementation:**
 - Expo Barcode Scanner
@@ -425,7 +1076,7 @@ CREATE TABLE research_articles (
 - Cache scanned items locally
 - Fallback: "Not found? Add manually"
 
-### 8.5. Computer Vision Calorie Estimation
+### 9. Barcode Scanning
 
 **Research Phase:**
 - Evaluate existing solutions:
@@ -478,7 +1129,7 @@ CREATE TABLE research_articles (
 - Performance testing (processing time)
 - Privacy audit (no data leakage)
 
-### 9. Data Export & Portability
+### 10. Computer Vision Calorie Estimation
 
 **Implementation:**
 - Expo Barcode Scanner
@@ -491,12 +1142,16 @@ CREATE TABLE research_articles (
 
 ### 9. Data Export & Portability
 
+### 11. Data Export & Portability
+
 **Export Options:**
 - Export all data (comprehensive JSON)
 - Export food log (CSV)
 - Export weight tracking (CSV)
 - Export body metrics (CSV)
 - Export custom foods (JSON)
+- **NEW: Export custom meals** (JSON)
+- **NEW: Export custom recipes** (JSON with all details)
 - Export date range (selectable)
 
 **Export Format:**
@@ -504,6 +1159,7 @@ CREATE TABLE research_articles (
 - Include schema version
 - Human-readable JSON/CSV
 - Can be imported to spreadsheet software
+- **NEW: Recipe export** includes ingredients and instructions
 
 **Future:** Import capability for migrating data
 
@@ -605,90 +1261,190 @@ CREATE TABLE research_articles (
 ### Navigation Structure
 ```
 Bottom Tabs:
-├── Home (Dashboard)
-├── Log Food
+├── Home (Dashboard - adaptive based on preferences)
+├── Log Food (Search: Foods, Meals, Recipes)
 ├── Progress (Body Metrics)
-├── Learn (Education Hub)
+├── Learn (Education Hub - if enabled in preferences)
 └── Profile (Settings)
 
 Stack Navigators:
 ├── Onboarding Stack (first launch only)
-├── Food Detail Stack (search → detail → log)
+│   ├── Welcome
+│   ├── Height
+│   ├── Birth Date
+│   ├── Sex
+│   ├── Tracking Quiz (NEW)
+│   ├── Activity Level
+│   ├── Goal Selection
+│   ├── Formula
+│   ├── Weight
+│   ├── Goal Config
+│   ├── Preferences Review (NEW)
+│   └── Complete
+├── Food Stack (search → detail → log)
+│   ├── Food Search
+│   ├── Food Detail
+│   ├── Barcode Scanner
+│   ├── Custom Food Creator
+│   └── Add to Log
+├── Meals Stack (NEW)
+│   ├── Meals List
+│   ├── Meal Detail
+│   ├── Create/Edit Meal
+│   └── Log Meal
+├── Recipes Stack (NEW)
+│   ├── Recipes List
+│   ├── Recipe Detail
+│   ├── Create/Edit Recipe
+│   ├── Add Ingredients
+│   ├── Add Instructions
+│   └── Log Recipe
 ├── Analytics Stack (graphs, details)
 └── Settings Stack (profile editing, preferences)
+    ├── Profile
+    ├── Goals
+    ├── Tracking Preferences (NEW)
+    ├── UI Theme (NEW)
+    ├── Display Settings
+    └── Data Management
 ```
 
 ### Key Screens
 
 #### 1. Home/Dashboard
 - Header: Date selector, notification icon
-- Today's calorie progress (large circular)
-- Macro breakdown (3 smaller circles or bars)
-- Quick actions: "Log Food", "Log Weight"
-- Recent foods (quick log)
-- Streak indicator
+- **Adaptive layout based on tracking preferences and UI theme**
+- **Minimalist:** Large calorie circle, weight quick entry, done
+- **Standard:** Calorie progress, macro breakdown (3 circles), quick actions
+- **Maximalist:** Calorie, macros, tracked micros, graphs, recent foods, streak
+- Quick actions: "Log Food", "Log Meal", "Log Recipe", "Log Weight"
 - Bottom tab navigation
 
 #### 2. Log Food
 - Search bar (prominent)
+- **NEW: Tabs:** Foods | Meals | Recipes
 - Barcode scan button
-- Filter tabs: All, Recent, Favorites, Custom
+- Filter tabs per section:
+  - **Foods:** All, Recent, Favorites, USDA, Branded, Custom
+  - **Meals:** All, Recent, Favorites
+  - **Recipes:** All, Recent, Favorites, By Category
 - Search results list
-- Tap food → Food Detail sheet
-- Bottom: "Create Custom Food" link
+- Tap item → Detail sheet
+- Bottom: "Create Custom Food/Meal/Recipe" (context-aware)
 
-#### 3. Food Detail Modal
-- Food name, brand
+#### 3. Food/Meal/Recipe Detail Modal
+- Name, brand (if applicable)
+- Thumbnail photo (if recipe)
 - Serving size selector (dropdown + manual)
-- Nutrition facts table
+- **For recipes:** "View Recipe" button (opens full recipe view)
+- Nutrition facts table (adaptive to tracking preferences)
 - Meal type selector
 - Time picker
 - Notes field
 - "Add to Log" button
 
-#### 4. Daily Log
+#### 4. Recipe Detail View (Full Screen)
+- Hero photo (if added)
+- Recipe name and description
+- Tags, category, difficulty
+- Servings yield and timing
+- **Tabs:**
+  - Overview (summary)
+  - Ingredients (list)
+  - Instructions (step-by-step or text)
+  - Nutrition (per serving and total)
+  - Notes
+- Action bar:
+  - Log servings
+  - Edit
+  - Favorite
+  - Share
+  - Delete
+
+#### 5. Create/Edit Recipe
+- **Sections:**
+  - Basic Info (name, description, category, servings, difficulty, tags)
+  - Timing (prep, cook)
+  - Ingredients (add/remove/reorder)
+  - Instructions (text or step-by-step)
+  - Photo (camera or gallery)
+  - Notes
+- Save button
+- **Live nutrition preview** as ingredients are added
+
+#### 6. Daily Log
 - Date navigation (< Today >)
 - Meal sections (Breakfast, Lunch, Dinner, Snacks)
-- Foods listed with serving + macros
-- Running totals at top
-- Tap food to edit/delete
+- Foods/meals/recipes listed with serving + macros
+- Running totals at top (adaptive based on tracking preferences)
+- Tap item to edit/delete
 - "Add note for today"
-- Micronutrients expandable section
+- **Micronutrients section** (only if user tracks any micros)
+  - Shows only nutrients user is tracking
+  - Expandable for details
 
-#### 5. Progress (Body Metrics)
+#### 7. Custom Meals List
+- List/grid view toggle
+- Search bar
+- Filter: All, Favorites, Recent
+- Meal cards showing:
+  - Name
+  - Description
+  - Quick nutrition summary
+  - Component count ("5 items")
+- Tap to view details or quick-log
+- FAB: "Create Meal"
+
+#### 8. Custom Recipes List
+- List/grid/card view toggle
+- Search bar
+- Filters:
+  - Category (breakfast, lunch, dinner, etc.)
+  - Tags (quick, vegetarian, high-protein, etc.)
+  - Favorites
+  - Recently cooked
+- Sort:
+  - Name (A-Z)
+  - Date created
+  - Times cooked
+  - Prep time
+- Recipe cards showing:
+  - Photo (if added)
+  - Name
+  - Category and tags
+  - Servings and timing
+  - Quick nutrition summary
+  - Times cooked
+- Tap to view full recipe
+- FAB: "Create Recipe"
+
+#### 9. Progress (Body Metrics)
 - Header tabs: Weight, Body Fat %, Photos
 - Current value (large)
 - Quick entry input
-- Trend graph (interactive)
+- Trend graph (interactive, adapts to UI theme)
 - Time range selector (7d, 30d, 90d, all)
 - Goal progress indicator
 - History list (tap to edit)
 
-#### 6. Progress Photos
-- Grid view of photos (chronological)
-- Filter by type (front, side, back)
-- "Add Photo" FAB button
-- Tap photo → full screen with:
-  - Date
-  - Notes
-  - Edit/Delete options
-  - Compare mode (select another photo)
-
-#### 7. Analytics
-- Summary cards:
+#### 10. Analytics
+- Summary cards (adaptive based on what user tracks):
   - Average calories
-  - Average macros
+  - Average macros (only tracked ones)
+  - Average micros (only tracked ones)
   - Weight change
   - Logging consistency
 - Graph section (scrollable):
   - Weight trend
   - Calorie intake
   - Macro distribution
-  - Micronutrient trends (selectable)
+  - **Micronutrient trends** (only for tracked nutrients)
 - Date range selector
 - Export data button
+- **Display density adapts to UI theme**
 
-#### 8. Learn (Education Hub)
+#### 11. Learn (Education Hub)
+- **Only visible if user enabled in tracking preferences**
 - Top tabs: What's New, Basics
 - **What's New:**
   - Article cards (scrollable feed)
@@ -703,14 +1459,20 @@ Stack Navigators:
   - Myths
   - etc.
 
-#### 9. Profile/Settings
+#### 12. Profile/Settings
 - User info summary
 - Edit Profile
 - Goals & Preferences
   - Change goal
   - Adjust TDEE formula
   - Activity level
-- Display Settings
+- **NEW: Tracking Preferences**
+  - What nutrients to track
+  - Focus mode presets
+  - Dashboard customization
+  - Feature visibility
+- **NEW: Display Settings**
+  - UI Theme (minimalist/standard/maximalist)
   - Units (metric/imperial)
   - Theme (light/dark/auto)
 - Data Management
@@ -721,6 +1483,36 @@ Stack Navigators:
   - Open source info
   - Privacy policy
   - Contact/feedback
+
+#### 13. Onboarding Quiz Screen (NEW)
+- Header: "What brings you to LibreFood?"
+- Subtitle: "We'll customize your experience based on your goals"
+- **Option cards** (can select multiple):
+  - 🎯 Weight Management
+  - 💪 Athletic Performance
+  - ❤️ General Health
+  - 🔬 Specific Health Condition (expands to sub-options)
+  - 🧠 Learn About Nutrition
+  - 📊 Track Everything
+  - ✨ Keep It Simple
+- Each card shows:
+  - Icon
+  - Title
+  - Brief description (2-3 words)
+- Multi-select UI (checkboxes or toggle cards)
+- Continue button (enabled after at least one selection)
+
+#### 14. Preferences Review Screen (NEW)
+- Header: "Your LibreFood Setup"
+- Subtitle: "Based on your goals, here's what we've set up"
+- **Sections:**
+  - "You'll be tracking:" (list of nutrients/metrics)
+  - "Your dashboard will show:" (preview widgets)
+  - "Your experience:" (UI theme selected)
+- Visual preview of dashboard
+- "Looks good!" button
+- "Customize" button (goes to detailed preferences)
+- Note: "You can change any of this anytime in Settings"
 
 ---
 
@@ -916,34 +1708,38 @@ librefood/
 ## Future Enhancements (Post-MVP)
 
 **Phase 2 Features:**
-- Recipe builder (calculate nutrition for recipes)
-- Meal planning
-- Integration with cooking app
-- Grocery list generation
+- **Recipe builder** (already in MVP - full featured)
+- Meal planning and prep tracking
+- Integration with cooking app (LibreFood Cook for sharing)
+- Grocery list generation from recipes
 
 **Phase 3 Features:**
 - Apple Health / Google Fit integration
 - Wearable sync (weight from smart scales)
 - Water intake tracking
 - Sleep tracking correlation
+- Restaurant database
 
 **Phase 4 Features:**
 - Optional cloud sync (encrypted)
 - Multi-device support
 - Backup/restore
 - Social features (optional, privacy-first)
+- Recipe sharing community
 
-**Integration with Cooking App:**
+**Integration with LibreFood Cook:**
 - Shared ingredient database
-- Log recipes directly
-- Meal prep → auto-log meals
-- Shopping list → nutrition planning
+- Recipe import/export between apps
+- Community recipe sharing
+- User ratings and reviews
+- Recipe collections and meal plans
 
-**Integration with Storage App:**
+**Integration with LibreFood Store:**
 - Pantry inventory
 - Expiration tracking
 - "What can I make with what I have?"
 - Auto-suggest meals based on inventory
+- Shopping list integration
 
 ---
 
