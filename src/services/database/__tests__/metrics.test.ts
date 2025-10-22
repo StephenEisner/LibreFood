@@ -15,7 +15,7 @@ import {
   deleteMetric,
   getMetricSummary,
 } from '../metrics';
-import type { BodyMetric, CreateMetricInput } from '@types/metrics';
+import type { BodyMetric, CreateMetricInput } from '../../../types/metrics';
 
 // Mock expo-sqlite
 jest.mock('expo-sqlite');

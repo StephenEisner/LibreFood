@@ -8,9 +8,7 @@ if (typeof globalThis !== 'undefined') {
   // @ts-expect-error - Expo Winter runtime property
   globalThis.__ExpoImportMetaRegistry = {};
 
-  // @ts-expect-error - Polyfill for Node environments
   if (!globalThis.structuredClone) {
-    // @ts-expect-error - Simple polyfill implementation
     globalThis.structuredClone = (val: unknown) => JSON.parse(JSON.stringify(val));
   }
 }

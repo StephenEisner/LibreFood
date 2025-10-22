@@ -10,7 +10,7 @@ import type {
   BodyFatEntry,
   CreateMetricInput,
   MetricSummary,
-} from '@types/metrics';
+} from '../../types/metrics';
 
 /**
  * Add or update a body metric entry for a specific date
@@ -27,14 +27,16 @@ export async function addOrUpdateMetric(input: CreateMetricInput): Promise<BodyM
 
   if (existing) {
     // Update existing entry
-    const result = await db.runAsync(
+    await db.runAsync(
       `UPDATE body_metrics
        SET weight_kg = ?, body_fat_percentage = ?, notes = ?
        WHERE id = ?`,
       [
-        input.weight_kg ?? existing.weight_kg,
-        input.body_fat_percentage ?? existing.body_fat_percentage,
-        input.notes ?? existing.notes,
+        input.weight_kg !== undefined ? input.weight_kg : (existing.weight_kg ?? null),
+        input.body_fat_percentage !== undefined
+          ? input.body_fat_percentage
+          : (existing.body_fat_percentage ?? null),
+        input.notes !== undefined ? input.notes : (existing.notes ?? null),
         existing.id,
       ]
     );
@@ -49,7 +51,13 @@ export async function addOrUpdateMetric(input: CreateMetricInput): Promise<BodyM
     const result = await db.runAsync(
       `INSERT INTO body_metrics (user_id, date, weight_kg, body_fat_percentage, notes)
        VALUES (?, ?, ?, ?, ?)`,
-      [input.user_id, input.date, input.weight_kg ?? null, input.body_fat_percentage ?? null, input.notes ?? null]
+      [
+        input.user_id,
+        input.date,
+        input.weight_kg !== undefined ? input.weight_kg : null,
+        input.body_fat_percentage !== undefined ? input.body_fat_percentage : null,
+        input.notes !== undefined ? input.notes : null,
+      ]
     );
 
     const metric = await getMetricById(result.lastInsertRowId);
@@ -166,7 +174,7 @@ export async function getLatestWeight(userId: number): Promise<WeightEntry | nul
     id: metric.id,
     user_id: metric.user_id,
     date: metric.date,
-    weight_kg: metric.weight_kg,
+    weight_kg: metric.weight_kg!,
     created_at: metric.created_at,
   };
 }
@@ -193,7 +201,7 @@ export async function getLatestBodyFat(userId: number): Promise<BodyFatEntry | n
     id: metric.id,
     user_id: metric.user_id,
     date: metric.date,
-    body_fat_percentage: metric.body_fat_percentage,
+    body_fat_percentage: metric.body_fat_percentage!,
     created_at: metric.created_at,
   };
 }
@@ -270,7 +278,7 @@ export async function getMetricSummary(userId: number): Promise<MetricSummary> {
     [userId, startDate]
   );
 
-  let avgWeeklyChange: number | undefined;
+  let avgWeeklyChange: number | undefined = undefined;
   if (recentWeights.length >= 2) {
     const oldestRecent = recentWeights[0];
     const newestRecent = recentWeights[recentWeights.length - 1];
@@ -282,9 +290,9 @@ export async function getMetricSummary(userId: number): Promise<MetricSummary> {
   }
 
   return {
-    latestWeight,
-    latestBodyFat,
-    weightChange,
-    avgWeeklyChange,
+    latestWeight: latestWeight ?? undefined,
+    latestBodyFat: latestBodyFat ?? undefined,
+    weightChange: weightChange ?? undefined,
+    avgWeeklyChange: avgWeeklyChange ?? undefined,
   };
 }

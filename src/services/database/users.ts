@@ -4,7 +4,7 @@
  */
 
 import { openDatabase } from './init';
-import type { User, CreateUserInput, UpdateUserInput } from '@types/user';
+import type { User, CreateUserInput, UpdateUserInput } from '../../types/user';
 
 /**
  * Create a new user profile
@@ -140,7 +140,7 @@ export async function updateUser(id: number, updates: UpdateUserInput): Promise<
 
   await db.runAsync(
     `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
-    values
+    values as number[]
   );
 
   const user = await getUserById(id);

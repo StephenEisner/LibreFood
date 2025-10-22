@@ -12,7 +12,7 @@ import {
   userExists,
   calculateAge,
 } from '../users';
-import type { User, CreateUserInput } from '@types/user';
+import type { User, CreateUserInput } from '../../../types/user';
 
 // Mock expo-sqlite
 jest.mock('expo-sqlite');
