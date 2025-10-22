@@ -1,8 +1,8 @@
-# SmartTracker - Product Specification Document
+# LibreFood - Product Specification Document
 
 ## Project Overview
 
-**Name:** SmartTracker  
+**Name:** LibreFood  
 **Tagline:** Evidence-based nutrition tracking. Free forever.  
 **Platform:** Native Mobile (iOS + Android)  
 **Tech Stack:** React Native + Expo  
@@ -844,7 +844,7 @@ Stack Navigators:
 
 **Repository Structure:**
 ```
-smarttracker/
+librefood/
 ├── src/
 │   ├── components/
 │   ├── screens/
@@ -877,12 +877,12 @@ smarttracker/
 ## Marketing & Launch Strategy
 
 ### Website (GitHub Pages)
-- smarttracker.github.io
+- librefood.github.io or custom domain (librefood.app, librefood.org)
 - Hero: "Evidence-based nutrition tracking. Free forever."
 - Features overview
 - Screenshots
 - Download buttons (App Store, Google Play, F-Droid)
-- "Why SmartTracker?" (comparison to paid apps)
+- "Why LibreFood?" (comparison to paid apps)
 - Open source badge
 - Privacy commitment
 
@@ -899,9 +899,9 @@ smarttracker/
 - Once proven: ask for sponsorship or shoutout
 
 ### App Store Optimization
-**Title:** SmartTracker - Nutrition & Calories  
-**Subtitle:** Free, science-based food tracker  
-**Keywords:** nutrition, calories, macro, diet, fitness, health, weight loss, vitamins, free, open source
+**Title:** LibreFood - Nutrition Tracker  
+**Subtitle:** Free, science-based food tracking  
+**Keywords:** nutrition, calories, macro, diet, fitness, health, weight loss, vitamins, free, open source, libre
 
 **Description highlights:**
 - All features free forever
