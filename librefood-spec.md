@@ -1000,7 +1000,42 @@ Based on FDA Daily Values (adults, 2,000 calorie diet):
 
 ---
 
-## 8. Claude Code Session Prompts
+## 8. Product Website
+
+A public-facing website to describe LibreFood, attract users, and establish credibility as a serious open-source project.
+
+### Goals
+- Communicate the core value proposition quickly (free, private, evidence-based)
+- Differentiate from paid competitors (MyFitnessPal, Cronometer)
+- Link to App Store / TestFlight and the GitHub repo
+- Serve as a landing page for anyone who discovers the project
+
+### Hosting
+- **GitHub Pages** — static site, free, version-controlled alongside the app
+- Lives at `librefood.app` (or `stepheneisner.github.io/LibreFood` until custom domain is set up)
+- Separate repo or `/website` subdirectory in this repo (TBD)
+
+### Content Sections
+1. **Hero** — App name, tagline ("Evidence-based nutrition tracking. Free forever."), screenshot/mockup, primary CTA (Download on App Store / Join TestFlight)
+2. **Why LibreFood?** — 3–4 differentiators: no paywalls, no data selling, open-source, scientific
+3. **Features** — Key features with icons: full macro + micronutrient tracking, USDA data, barcode scanning, custom foods/meals/recipes, body metrics, research feed
+4. **How It Works** — Simple 3-step: Set up your profile → Log your food → Understand your nutrition
+5. **Privacy** — "Your data never leaves your device" — explicit privacy guarantee
+6. **Open Source** — GPL v3, GitHub link, contribution welcome
+7. **Footer** — Links: GitHub, Privacy Policy, Contact
+
+### Tech Stack (Website)
+- Plain HTML/CSS/JS or a simple static site generator (e.g., Astro, Eleventy)
+- No frameworks required — the site should be fast and simple
+- Mobile-responsive
+- Dark/light mode support
+
+### When to Build
+After Phase 3 (food logging) is working — at that point there's enough of a product to show. Can be built in parallel with Phase 4 or 5.
+
+---
+
+## 9. Claude Code Session Prompts
 
 Prepared prompts for each implementation phase, to be used when starting coding sessions.
 

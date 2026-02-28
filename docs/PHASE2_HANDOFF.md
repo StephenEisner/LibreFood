@@ -107,6 +107,22 @@ Next phase implements the core food logging experience:
 2. Serving size: support multiple serving units from USDA data?
 3. Meal types: fixed 4 (Breakfast/Lunch/Dinner/Snacks) or configurable?
 
+---
+
+## Parallel Track: Product Website
+
+A public-facing marketing/landing site should be built in parallel with Phase 4 or 5, once there's enough of a working product to show.
+
+**Goal:** Communicate the value proposition, link to App Store/TestFlight and GitHub.
+
+**Key sections:** Hero with CTA, Why LibreFood (vs. paid competitors), Features, Privacy guarantee, Open Source.
+
+**Hosting:** GitHub Pages (free, version-controlled). Custom domain: `librefood.app` (TBD).
+
+**Tech:** Plain HTML/CSS or a lightweight static site generator (Astro, Eleventy). No frameworks needed.
+
+See **Section 8** of `librefood-spec.md` for the full website plan.
+
 ### Files to create/modify
 **Create:**
 - `src/services/api/usda.ts` — USDA search + detail fetch
