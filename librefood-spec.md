@@ -1132,6 +1132,76 @@ react-native-screens, react-native-safe-area-context
 - TypeScript types for all inputs/outputs
 ```
 
+### Session: Phase 3 — Food Search + Logging (PARTIAL — calorie bug open)
+
+```
+# State as of end of session (commit ad25a81, branch main)
+
+## What was built
+- LogStackNavigator: DailyLog → FoodSearch → FoodDetail → CustomFoodCreate/Edit
+- MainTabNavigator: Log tab now uses LogStackNavigator (headerShown: false)
+- DailyLogScreen: date nav arrows, meal sections from DEFAULT_MEAL_TYPES,
+  calorie/macro totals bar, long-press delete with haptics + confirm alert,
+  useFocusEffect reloads data on every focus (catches Add to Log return)
+- FoodSearchScreen: debounced 300ms hybrid search — local cache + USDA API +
+  Open Food Facts in parallel; dedup by fdc_id and gtin_upc; Custom (blue) and
+  OFF (green) source badges; "Create" header button → CustomFoodCreate
+- FoodDetailScreen: serving size chips (horizontal scroll, 100g always first,
+  then USDAFoodMeasures sorted by rank, deduped ±1g), amount TextInput,
+  live-scaled nutrition display, "Add to Log" → StackActions.popToTop()
+- CustomFoodCreateScreen + CustomFoodEditScreen: name/brand/serving form,
+  required macros, collapsible micronutrient section (29 fields)
+- src/services/api/usda.ts: searchUSDA, fetchUSDAFood, usdaResultToFood,
+  usdaDetailToFood; full 33-nutrient mapping by nutrientNumber string
+- src/services/api/openFoodFacts.ts: searchOFF (no API key); offProductToFood;
+  synthetic fdc_id (numeric barcodes used directly; hash for alphanumeric);
+  data_type='OpenFoodFacts' so FoodDetailScreen skips USDA fetch
+- foodLog.ts: FoodLogDisplayEntry + getLogForDateWithNames (LEFT JOIN foods +
+  custom_foods to get food_name and food_brand for display)
+
+## Food data sources
+- USDA FoodData Central: DEMO_KEY (rate-limited); plan to add per-user key in Phase 6
+- Open Food Facts: no key, parallel search, synthetic fdc_id stored in foods table
+- NCC Database: explore open-source partnership directly with them
+
+## Known bug: calories log as 0
+Symptom: After "Add to Log", DailyLogScreen totals bar shows 0 kcal.
+
+Root cause (suspected, not yet confirmed with simulator):
+FoodDetailScreen loads USDA foods via two async steps:
+  1. getFoodByFdcId() → may be null on first search (nothing cached yet)
+  2. fetchUSDAFood() → fetches detail and sets baseNutrition
+
+If step 2 fails (DEMO_KEY rate limit is the most likely cause), the catch block
+runs console.warn but setLoading(false) still fires at the bottom of the try/catch.
+The user then sees the UI with baseNutrition = { calories: 0 } (initial state)
+and can press "Add to Log", logging 0 calories.
+
+To debug:
+  1. Add console.log(baseNutrition, multiplier()) inside handleAddToLog before
+     the logFood() call in src/screens/log/FoodDetailScreen.tsx
+  2. Run in simulator, log a food, check Expo DevTools console
+  3. If baseNutrition.calories === 0, the API fetch is failing → confirm in
+     network tab or by catching the error and surfacing it in the UI
+  4. Fix: if no cached food AND fetchUSDAFood fails, show an error state
+     instead of rendering the 0-calorie detail view
+
+Secondary possibilities:
+  - The amount TextInput somehow gets cleared → parseFloat('') = NaN → multiplier = 0
+  - USDA search results don't include nutrient 208 (kcal) for certain dataTypes
+
+## Also not done (Phase 3 remainder)
+- CompleteScreen does not save initial weight to body_metrics — so DailyLogScreen
+  falls back to 2000 kcal target (no weight → no TDEE calc). Fix in Phase 4 when
+  metrics screen is built, or patch CompleteScreen to call addMetric() with weight_kg.
+- No loading/error state shown when USDA fetch fails on FoodDetailScreen
+- CustomFoodEdit is not yet navigated to from anywhere (screen exists, works,
+  but no entry point — add in Phase 6 polish)
+
+## tsc --noEmit: clean
+## Next phase: Phase 4 — Dashboard + Metrics
+```
+
 ---
 
 ## 9. Key Design Decisions
