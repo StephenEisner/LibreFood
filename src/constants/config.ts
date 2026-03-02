@@ -12,6 +12,24 @@ export const CACHE_TTL_MS = {
 
 export const GOAL_RATE_OPTIONS = [0.25, 0.5, 0.75, 1.0] as const;
 
+// USDA FoodData Central API
+// TODO (Phase 6): auto-provision per-user API keys to avoid DEMO_KEY rate limits
+export const USDA_API_KEY = 'DEMO_KEY';
+export const USDA_PAGE_SIZE = 25;
+
+export interface MealTypeConfig {
+  key: string;
+  label: string;
+}
+
+// Phase 6: replace DEFAULT_MEAL_TYPES with a user-preferences array; all screens update automatically.
+export const DEFAULT_MEAL_TYPES: MealTypeConfig[] = [
+  { key: 'breakfast', label: 'Breakfast' },
+  { key: 'lunch', label: 'Lunch' },
+  { key: 'dinner', label: 'Dinner' },
+  { key: 'snack', label: 'Snacks' },
+];
+
 export const SAFE_CALORIE_MINIMUMS = {
   male: 1500,
   female: 1200,

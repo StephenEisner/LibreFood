@@ -29,7 +29,7 @@ export type MainTabParamList = {
 export type LogStackParamList = {
   DailyLog: undefined;
   FoodSearch: { date: string; mealType: string };
-  FoodDetail: { fdcId: number };
+  FoodDetail: { fdcId?: number; customFoodId?: number; date: string; mealType: string };
   CustomFoodCreate: undefined;
   CustomFoodEdit: { id: number };
 };

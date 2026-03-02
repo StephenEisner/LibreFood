@@ -30,6 +30,30 @@ export interface DailyTotals {
   fat_g: number;
 }
 
+export interface FoodLogDisplayEntry extends FoodLogEntry {
+  food_name: string;
+  food_brand: string | null;
+}
+
+export async function getLogForDateWithNames(
+  userId: number,
+  date: string
+): Promise<FoodLogDisplayEntry[]> {
+  const db = await openDatabase();
+  return db.getAllAsync<FoodLogDisplayEntry>(
+    `SELECT fl.*,
+       COALESCE(f.description, cf.name, 'Unknown Food') as food_name,
+       COALESCE(f.brand_name, cf.brand) as food_brand
+     FROM food_log fl
+     LEFT JOIN foods f ON fl.food_id = f.fdc_id
+     LEFT JOIN custom_foods cf ON fl.custom_food_id = cf.id
+     WHERE fl.user_id = ? AND fl.date = ?
+     ORDER BY fl.meal_type ASC, fl.sort_order ASC, fl.created_at ASC`,
+    userId,
+    date
+  );
+}
+
 export async function logFood(
   data: Omit<FoodLogEntry, 'id' | 'created_at'>
 ): Promise<number> {

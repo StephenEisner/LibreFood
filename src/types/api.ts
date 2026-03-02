@@ -8,6 +8,14 @@ export interface USDANutrient {
   value: number;
 }
 
+export interface USDAFoodMeasure {
+  disseminationText: string; // e.g. "1 cup", "1 tbsp"
+  gramWeight: number;
+  id: number;
+  modifier: string;
+  rank: number; // display order, ascending
+}
+
 export interface USDAFood {
   fdcId: number;
   description: string;
@@ -20,6 +28,7 @@ export interface USDAFood {
   householdServingFullText?: string;
   foodCategory?: string;
   foodNutrients: USDANutrient[];
+  foodMeasures: USDAFoodMeasure[];
 }
 
 export interface FoodSearchResult {
